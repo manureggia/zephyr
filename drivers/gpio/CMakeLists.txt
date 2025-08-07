@@ -129,6 +129,9 @@ zephyr_library_sources_ifdef(CONFIG_GPIO_SHELL      gpio_shell.c)
 zephyr_library_sources_ifdef(CONFIG_USERSPACE   gpio_handlers.c)
 # zephyr-keep-sorted-stop
 
+zephyr_library_sources_ifdef(CONFIG_GPIO_ROCKCHIP gpio_rk3588.c)
+
+
 if (CONFIG_GPIO_EMUL_SDL)
   zephyr_library_sources(gpio_emul_sdl.c)
   if (CONFIG_NATIVE_APPLICATION)

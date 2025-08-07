@@ -1,0 +1,32 @@
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+/ {
+	/*
+	 * Abilitiamo un alias per un LED di test, anche se
+	 * questo esempio non lo usa, serve per testare
+	 * che la configurazione GPIO funzioni.
+	 */
+	aliases {
+		led0 = &led_test;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		led_test: led_test_pin_0 {
+			gpios = <&gpio0 6 GPIO_ACTIVE_HIGH>;
+			label = "Test LED";
+		};
+	};
+};
+
+/* Abilitiamo il controller GPIO0 */
+&gpio0 {
+	status = "okay";
+	#gpio-cells = <2>;
+};
+
+/* Abilitiamo il clock controller, dipendenza del GPIO */
+&cru {
+	status = "okay";
+};

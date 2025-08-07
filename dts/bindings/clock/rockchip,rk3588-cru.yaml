@@ -1,0 +1,15 @@
+# SPDX-License-Identifier: (GPL-2.0-or-later OR MIT)
+
+description: Rockchip RK3588 Clock and Reset Unit
+
+compatible: "rockchip,rk3588-cru"
+
+include: base.yaml
+
+properties:
+  "#clock-cells":
+    type: int
+    const: 1
+
+clock-cells:
+  - id

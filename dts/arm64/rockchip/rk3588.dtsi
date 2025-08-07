@@ -1,0 +1,252 @@
+/*
+ * Copyright 2024 Université Gustave Eiffel
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <arm64/armv8-a.dtsi>
+#include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
+#include <dt-bindings/clock/rk3588-cru.h>
+//#include <dt-bindings/pinctrl/rockchip.h>
+#include "rk3588-pinctrl.h"
+
+#include <mem.h>
+
+/ {
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@000 {
+			device_type = "cpu";
+			compatible = "arm,cortex-a55";
+			enable-method = "psci";
+			reg = <0x000>;
+		};
+
+		cpu@100 {
+			device_type = "cpu";
+			compatible = "arm,cortex-a55";
+			enable-method = "psci";
+			reg = <0x100>;
+		};
+
+		cpu@200 {
+			device_type = "cpu";
+			compatible = "arm,cortex-a55";
+			enable-method = "psci";
+			reg = <0x200>;
+		};
+
+		cpu@300 {
+			device_type = "cpu";
+			compatible = "arm,cortex-a55";
+			enable-method = "psci";
+			reg = <0x300>;
+		};
+
+		cpu@400 {
+			device_type = "cpu";
+			compatible = "arm,cortex-a76";
+			reg = <0x400>;
+		};
+
+		cpu@500 {
+			device_type = "cpu";
+			compatible = "arm,cortex-a76";
+			reg = <0x500>;
+		};
+
+		cpu@600 {
+			device_type = "cpu";
+			compatible = "arm,cortex-a76";
+			reg = <0x600>;
+		};
+
+		cpu@700 {
+			device_type = "cpu";
+			compatible = "arm,cortex-a76";
+			reg = <0x700>;
+		};
+	};
+
+	cru: clock-controller@fd7c0000 {
+		compatible = "rockchip,rk3588-cru";
+		reg = <0xfd7c0000 0x1000>;
+		#clock-cells = <1>;
+	};
+
+	gic: interrupt-controller@fe600000  {
+		#address-cells = <1>;
+		compatible = "arm,gic-v3", "arm,gic";
+		reg = <0xfe600000 0x10000>, /* GICD */
+		      <0xfe680000 0x100000>; /* GICR */
+		interrupt-controller;
+		#interrupt-cells = <4>;
+		status = "okay";
+	};
+
+	sram0: memory@d400000 {
+		reg = <0x0d400000 DT_SIZE_M(128)>;
+	};
+	
+	psci {
+		compatible = "arm,psci-0.2", "arm,psci";
+		method = "smc";
+	};
+
+	timer {
+		compatible = "arm,armv8-timer";
+		interrupt-parent = <&gic>;
+		interrupts = <GIC_PPI 13 IRQ_TYPE_LEVEL
+			      IRQ_DEFAULT_PRIORITY>,
+			     <GIC_PPI 14 IRQ_TYPE_LEVEL
+			      IRQ_DEFAULT_PRIORITY>,
+			     <GIC_PPI 11 IRQ_TYPE_LEVEL
+			      IRQ_DEFAULT_PRIORITY>,
+			     <GIC_PPI 10 IRQ_TYPE_LEVEL
+			      IRQ_DEFAULT_PRIORITY>;
+	};
+
+
+
+	pinctrl: pinctrl@fd5f0000 {
+		compatible = "rockchip,rk3588-pinctrl";
+		status = "okay";
+
+		reg = <0xfd5f0000 0x4000>,   /* PMU0GRF */
+			<0xfd5f4000 0x4000>,   /* PMU1GRF */
+			<0xfd5f8000 0x4000>,   /* PMU2GRF */
+			<0xfd7c0000 0x4000>,   /* SYSGRF */
+			<0xfd5e8000 0x4000>,   /* PMU0_IOC */
+			<0xfd5ec000 0x4000>,   /* PMU1_IOC */
+			<0xfd890000 0x4000>,   /* PMU2_IOC */
+			<0xfd894000 0x4000>;   /* BUS_IOC */
+
+		/* CORREZIONE: Aggiunti gli underscore per corrispondere al codice C */
+		reg-names = "pmu0_grf", "pmu1_grf", "pmu2_grf", "sys_grf",
+					"pmu0_ioc", "pmu1_ioc", "pmu2_ioc", "bus_ioc";
+
+		/* Le definizioni dei pin con la macro RK_PINCFG sono corrette */
+		uart2 {
+			uart2_m1_xfer: uart2-m1-xfer {
+				rockchip,pins = <RK_PINCFG(4, 1, RK_FUNC_2, RK_PULL_UP, RK_DRIVE_2MA)>,
+								<RK_PINCFG(4, 0, RK_FUNC_2, RK_PULL_NONE, RK_DRIVE_2MA)>;
+			};
+		};
+		
+		uart6 {
+			uart6m1: uart6-m1-pins {
+				rockchip,pins = <RK_PINCFG(0, 10, RK_FUNC_1, RK_PULL_UP, RK_DRIVE_2MA)>, /* TX */
+								<RK_PINCFG(0, 11, RK_FUNC_1, RK_PULL_NONE, RK_DRIVE_2MA)>; /* RX */
+			};
+		};
+	};
+
+	
+
+	/* TEST UART
+
+	uart1: serial@feb40000 {
+		compatible = "rockchip,rk3588-uart", "ns16550";
+		reg = <0xfeb40000 0x100>;
+		interrupt-parent = <&gic>;
+		interrupts = <GIC_SPI 332 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		clocks = <&cru SCLK_UART1>, <&cru PCLK_UART1>;
+		clock-names = "baudclk", "apb_pclk";
+		clock-frequency = <350000000>;
+		reg-shift = <2>;
+		status = "disabled";
+	};
+
+	uart6: serial@feb90000 {
+		compatible = "snps,dw-apb-uart";
+		reg = <0xfeb90000 0x10000>;
+		interrupt-parent = <&gic>;
+		interrupts = <GIC_SPI 337 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		clocks = <&cru SCLK_UART6>, <&cru PCLK_UART6>;
+		clock-names = "baudclk", "apb_pclk";
+		pinctrl-0 = <&uart6m1>;
+		pinctrl-names = "default";
+		reg-shift = <2>;
+		clock-frequency = <350000000>;
+		current-speed = <115200>; 
+		status = "okay";          
+	};
+*/
+	//"rockchip,rk3588-uart,rk3588s-uart",
+	uart2: serial@feb50000 {
+		compatible = "ns16550";
+		reg = <0xfeb50000 0x1000>;
+		interrupt-parent = <&gic>;
+		interrupts = <GIC_SPI 333 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		clock-frequency = <350000000>;
+		reg-shift = <2>;
+		status = "disabled";
+	};
+
+	/* GPIO CONFIG */
+
+		gpio0: gpio@fd8a0000 {
+			compatible = "rockchip,rk3588-gpio";
+			reg = <0xfd8a0000 0x100>;
+			interrupt-parent = <&gic>;
+			interrupts = <GIC_SPI 277 4 0>;
+			clocks = <&cru PCLK_GPIO0>, <&cru DBCLK_GPIO0>;
+			gpio-controller;
+			interrupt-controller;
+			#gpio-cells = <2>;
+			#interrupt-cells = <2>;
+		};
+
+		gpio1: gpio@fec20000 {
+			compatible = "rockchip,rk3588-gpio";
+			reg = <0xfec20000 0x100>;
+			interrupt-parent = <&gic>;
+			interrupts = <GIC_SPI 278 4 0>;
+			clocks = <&cru PCLK_GPIO1>, <&cru DBCLK_GPIO1>;
+			gpio-controller;
+			interrupt-controller;
+			#gpio-cells = <2>;
+			#interrupt-cells = <2>;
+		};
+
+		gpio2: gpio@fec30000 {
+			compatible = "rockchip,rk3588-gpio";
+			reg = <0xfec30000 0x100>;
+			interrupt-parent = <&gic>;
+			interrupts = <GIC_SPI 279 4 0>;
+			clocks = <&cru PCLK_GPIO2>, <&cru DBCLK_GPIO2>;
+			gpio-controller;
+			interrupt-controller;
+			#gpio-cells = <2>;
+			#interrupt-cells = <2>;
+		};
+
+		gpio3: gpio@fec40000 {
+			compatible = "rockchip,rk3588-gpio";
+			reg = <0xfec40000 0x100>;
+			interrupt-parent = <&gic>;
+			interrupts = <GIC_SPI 280 4 0>;
+			clocks = <&cru PCLK_GPIO3>, <&cru DBCLK_GPIO3>;
+			gpio-controller;
+			interrupt-controller;
+			#gpio-cells = <2>;
+			#interrupt-cells = <2>;
+		};
+
+		gpio4: gpio@fec50000 {
+			compatible = "rockchip,rk3588-gpio";
+			reg = <0xfec50000 0x100>;
+			interrupt-parent = <&gic>;
+			interrupts = <GIC_SPI 281 4 0>;
+			clocks = <&cru PCLK_GPIO4>, <&cru DBCLK_GPIO4>;
+			gpio-controller;
+			interrupt-controller;
+			#gpio-cells = <2>;
+			#interrupt-cells = <2>;
+		};
+
+};

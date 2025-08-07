@@ -1,0 +1,7 @@
+
+config SOC_RK3588
+	bool
+	select SOC_SERIES_RK35
+
+config SOC
+	default "rk3588" if SOC_RK3588

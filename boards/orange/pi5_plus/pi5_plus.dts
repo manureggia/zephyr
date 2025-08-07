@@ -1,0 +1,32 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <arm64/rockchip/rk3588.dtsi>
+#include <dt-bindings/pinctrl/rockchip.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>     
+
+/ {
+	model = "OrangePi 5 Plus";
+	compatible = "rockchip,rk3588";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,console = &uart2;
+		zephyr,shell-uart = &uart2;
+	};
+};
+
+&uart2 {
+	status = "okay";
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&cru {
+	status = "okay";
+};

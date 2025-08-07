@@ -1,0 +1,12 @@
+idetifier: pi5_plus
+name: Orange Pi 5 Plus (SMP support)
+type: mcu
+arch: arm64
+toolchain:
+  - zephyr
+  - cross-compile
+ram: 8192
+testing:
+  ignore_tags:
+    - net
+    - bluetooth

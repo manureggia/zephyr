@@ -1,0 +1,20 @@
+# SPDX-License-Identifier: Apache-2.0
+
+description: Rockchip RK3588 Pinctrl Controller
+
+compatible: "rockchip,rk3588-pinctrl"
+
+include: [pinctrl-device.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+    description: |
+      Specifies base addresses of the General Register Files (GRF)
+      used for pinctrl.
+
+  reg-names:
+    required: true
+    description: |
+      Should contain the names of the register blocks specified in 'reg'.
+      E.g., "pmu0grf", "pmu1grf", "pmu2grf", "sysgrf".

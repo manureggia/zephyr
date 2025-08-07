@@ -1,0 +1,51 @@
+# Copyright (c) 2017 Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+description: Synopsys DesignWare APB UART controller
+
+compatible: "snps,dw-apb-uart"
+
+include: uart-controller.yaml
+
+properties:
+  reg:
+    required: true
+    description: Base address and length of the UART registers.
+  interrupts:
+    required: true
+    description: Interrupt line for the UART controller.
+  clocks:
+    type: phandle-array
+    required: true
+    description:
+      List of phandles and clock specifiers for the UART clocks.
+      Typically, this will include a baud clock and an APB clock.
+  clock-names:
+    type: string-array
+    required: true
+    description:
+      Names corresponding to the clocks property (e.g., "baudclk", "apb_pclk").
+
+
+  clock-frequency:
+    type: int
+    required: true
+    description: Input clock frequency for the baud rate generator in Hz.
+  reg-shift:
+    type: int
+    required: false
+    default: 0
+    description: Register access shift.
+  reg-io-width:
+    type: int
+    required: false
+    default: 4
+    description: Register access width in bytes.
+  pinctrl-0:
+    type: phandle
+    required: false
+    description: Pin control configuration for default state.
+  pinctrl-names:
+    type: string-array
+    required: false
+    description: Pin control state names.

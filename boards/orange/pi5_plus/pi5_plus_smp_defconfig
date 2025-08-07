@@ -1,0 +1,49 @@
+# Copyright 2022 HNU-ESNL
+# Copyright 2022 openEuler SIG-Zephyr
+# SPDX-License-Identifier: Apache-2.0
+
+# Platform Configuration
+CONFIG_ARM64_VA_BITS_40=y
+CONFIG_ARM64_PA_BITS_40=y
+CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC=24000000
+CONFIG_CACHE_MANAGEMENT=y
+CONFIG_ARMV8_A_NS=y
+
+# Serial Drivers
+CONFIG_SERIAL=y
+CONFIG_UART_INTERRUPT_DRIVEN=y
+
+# Enable Console
+CONFIG_CONSOLE=y
+CONFIG_UART_CONSOLE=y
+
+# SMP support
+CONFIG_SMP=y
+CONFIG_MP_MAX_NUM_CPUS=4
+CONFIG_MAX_THREAD_BYTES=4
+
+# PSCI support
+CONFIG_PM_CPU_OPS=y
+CONFIG_PM_CPU_OPS_PSCI=y
+
+# Device Tree
+CONFIG_UART_NS16550=y
+
+#CONFIG_UART_DW=y
+
+#####################
+#### RK Drivers  ####
+#####################
+
+CONFIG_PINCTRL=y
+CONFIG_PINCTRL_ROCKCHIP=y
+
+# Abilita supporto GPIO
+CONFIG_GPIO=y
+
+# Abilita driver RK3588
+CONFIG_GPIO_ROCKCHIP=y
+
+# Abilita clock control se necessario
+CONFIG_CLOCK_CONTROL=y
+CONFIG_CLOCK_CONTROL_ROCKCHIP=y

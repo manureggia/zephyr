@@ -1,0 +1,8 @@
+config CLOCK_CONTROL_ROCKCHIP
+	bool "Rockchip Clock Control driver"
+	depends on DT_HAS_ROCKCHIP_RK3588_CRU_ENABLED
+	help
+	  Abilita il driver di clock control per Rockchip RK3588.
+	  Questo driver gestisce l’abilitazione/disabilitazione e
+	  interrogazione della frequenza dei clock periferici
+	  tramite il CRU (Clock and Reset Unit).

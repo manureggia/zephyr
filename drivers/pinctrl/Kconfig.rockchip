@@ -1,0 +1,12 @@
+if PINCTRL
+
+config PINCTRL_ROCKCHIP
+    bool "Rockchip Pinctrl driver"
+    default y
+    depends on SOC_FAMILY_ROCKCHIP
+    help
+      Enable the pinctrl driver for Rockchip SoCs. This driver is
+      required for configuring pin functions (muxing), pull-up/down,
+      and drive strength.
+
+endif # PINCTRL

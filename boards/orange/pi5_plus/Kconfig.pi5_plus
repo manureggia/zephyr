@@ -1,0 +1,2 @@
+config BOARD_PI5_PLUS
+    select SOC_RK3588

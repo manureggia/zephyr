@@ -1,0 +1,12 @@
+if SOC_RK3588
+
+config NUM_IRQS
+	default 544 #TODO: Verificare
+
+config FLASH_SIZE
+	default 0
+
+config FLASH_BASE_ADDRESS
+	default 0
+
+endif

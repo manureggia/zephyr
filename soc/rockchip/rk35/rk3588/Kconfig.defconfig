@@ -1,0 +1,5 @@
+if SOC_RK3588
+
+rsource "Kconfig.defconfig.rk3588"
+
+endif # SOC_RK3588
