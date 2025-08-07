@@ -27,6 +27,7 @@
 		led2 = &led2;
 		sw0 = &button0;
 		sw1 = &button1;
+		pwm-led0 = &pwm_led0;
 	};
 
 	sram0: memory@SSRAM_BASE_NAME {
@@ -78,6 +79,15 @@
 			status = "okay";
 		};
 	};
+
+	pwmleds: pwmleds {
+		compatible = "pwm-leds";
+		status = "disabled";
+		pwm_led0: pwm_led_0 {
+			pwms = <&pwm2 0 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
+			label = "PWM_LED";
+		};
+	};
 };
 
 &xo32m_xtal {
@@ -95,8 +105,18 @@
 	status = "disabled";
 };
 
-&counter0 {
-	status = "disabled";
+&timer0 {
+	counter0: counter {
+		status = "disabled";
+	};
+};
+
+&timer2 {
+	pwm2: pwm {
+		pinctrl-0 = <&pwm2_default>;
+		pinctrl-names = "default";
+		status = "disabled";
+	};
 };
 
 &rtc0 {
@@ -197,6 +217,27 @@
 		ambiq,timing-config-mask = <0x62>;
 		ambiq,timing-config = <0 16 1 0 0 5 20>;
 	};
+};
+
+&sdio0 {
+	pinctrl-0 = <&sdio0_default>;
+	pinctrl-names = "default";
+	txdelay = <0>;
+	rxdelay = <0>;
+	status = "okay";
+	mmc {
+		compatible = "zephyr,mmc-disk";
+		disk-name = "SD2";
+		status = "okay";
+	};
+};
+
+&sdio1 {
+	pinctrl-0 = <&sdio1_default>;
+	pinctrl-names = "default";
+	txdelay = <9>;
+	rxdelay = <11>;
+	status = "okay";
 };
 
 zephyr_udc0: &usb {

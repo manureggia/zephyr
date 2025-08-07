@@ -5,6 +5,7 @@
 /*
  * Copyright (c) 2020 Intel Corporation
  * Copyright (c) 2022-2025 Nordic Semiconductor ASA
+ * Copyright 2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -1936,8 +1937,8 @@ static int unicast_client_ep_config(struct bt_bap_ep *ep, struct net_buf_simple 
 
 	req = net_buf_simple_add(buf, sizeof(*req));
 	req->ase = ep->status.id;
-	req->latency = 0x02; /* TODO: Select target latency based on additional input? */
-	req->phy = 0x02;     /* TODO: Select target PHY based on additional input? */
+	req->latency = codec_cfg->target_latency;
+	req->phy = codec_cfg->target_phy;
 	req->codec.id = codec_cfg->id;
 	req->codec.cid = codec_cfg->cid;
 	req->codec.vid = codec_cfg->vid;
@@ -3517,7 +3518,6 @@ int bt_bap_unicast_client_disable(struct bt_bap_stream *stream)
 int bt_bap_unicast_client_stop(struct bt_bap_stream *stream)
 {
 	struct bt_bap_ep *ep = stream->ep;
-	enum bt_iso_state iso_state;
 	struct net_buf_simple *buf;
 	struct bt_ascs_start_op *req;
 	int err;
@@ -3528,27 +3528,6 @@ int bt_bap_unicast_client_stop(struct bt_bap_stream *stream)
 		LOG_DBG("Stream %p does not have a connection", stream);
 
 		return -ENOTCONN;
-	}
-
-	/* ASCS_v1.0 3.2 ASE state machine transitions
-	 *
-	 * If the server detects link loss of a CIS for an ASE in the Streaming state or the
-	 * Disabling state, the server shall immediately transition that ASE to the QoS Configured
-	 * state.
-	 *
-	 * This effectively means that if an ASE no longer has a connected CIS, the server shall
-	 * bring it to the QoS Configured state. That means that we, as a unicast client, should not
-	 * attempt to stop it
-	 */
-	if (ep->iso == NULL) {
-		LOG_DBG("Stream endpoint does not have a CIS, server will stop the ASE");
-		return -EALREADY;
-	}
-
-	iso_state = ep->iso->chan.state;
-	if (iso_state != BT_ISO_STATE_CONNECTED && iso_state != BT_ISO_STATE_CONNECTING) {
-		LOG_DBG("Stream endpoint CIS is not connected, server will stop the ASE");
-		return -EALREADY;
 	}
 
 	buf = bt_bap_unicast_client_ep_create_pdu(stream->conn, BT_ASCS_STOP_OP);
@@ -4488,14 +4467,13 @@ static void unicast_client_disconnected(struct bt_conn *conn, uint8_t reason)
 	unicast_client_ep_reset(conn, reason);
 }
 
-static struct bt_conn_cb conn_cbs = {
+BT_CONN_CB_DEFINE(conn_cbs) = {
 	.disconnected = unicast_client_disconnected,
 };
 
 int bt_bap_unicast_client_discover(struct bt_conn *conn, enum bt_audio_dir dir)
 {
 	struct unicast_client *client;
-	static bool conn_cb_registered;
 	uint8_t role;
 	int err;
 
@@ -4527,11 +4505,6 @@ int bt_bap_unicast_client_discover(struct bt_conn *conn, enum bt_audio_dir dir)
 	client->disc_params.type = BT_GATT_DISCOVER_CHARACTERISTIC;
 	client->disc_params.start_handle = BT_ATT_FIRST_ATTRIBUTE_HANDLE;
 	client->disc_params.end_handle = BT_ATT_LAST_ATTRIBUTE_HANDLE;
-
-	if (!conn_cb_registered) {
-		bt_conn_cb_register(&conn_cbs);
-		conn_cb_registered = true;
-	}
 
 	err = bt_gatt_discover(conn, &client->disc_params);
 	if (err != 0) {

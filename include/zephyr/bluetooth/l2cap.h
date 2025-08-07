@@ -111,6 +111,20 @@ extern "C" {
  */
 #define BT_L2CAP_ECRED_MIN_MPS 64
 
+/** @brief L2CAP maximum MTU
+ *
+ *  The maximum MTU for an L2CAP Based Connection. This is the same with or without ECRED. This
+ *  requirement is taken from text in Core 3.A.4.22 and 3.A.4.26 v6.0.
+ */
+#define BT_L2CAP_MAX_MTU UINT16_MAX
+
+/** @brief L2CAP maximum MPS
+ *
+ *  The maximum MPS for an L2CAP Based Connection. This is the same with or without ECRED. This
+ *  requirement is taken from text in Core 3.A.4.22 and 3.A.4.26 v6.0.
+ */
+#define BT_L2CAP_MAX_MPS 65533
+
 /** @brief The maximum number of channels in ECRED L2CAP signaling PDUs
  *
  *  Currently, this is the maximum number of channels referred to in the
@@ -768,6 +782,16 @@ int bt_l2cap_server_register(struct bt_l2cap_server *server);
  *  @return 0 in case of success or negative value in case of error.
  */
 int bt_l2cap_br_server_register(struct bt_l2cap_server *server);
+
+/** @brief Unregister L2CAP server on BR/EDR oriented connection.
+ *
+ *  Unregister L2CAP server for a PSM.
+ *
+ *  @param server Server structure.
+ *
+ *  @return 0 in case of success or negative value in case of error.
+ */
+int bt_l2cap_br_server_unregister(struct bt_l2cap_server *server);
 
 /** @brief Connect Enhanced Credit Based L2CAP channels
  *
