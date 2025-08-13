@@ -201,6 +201,6 @@ source "drivers/gpio/Kconfig.xlnx"
 source "drivers/gpio/Kconfig.xlnx_ps"
 source "drivers/gpio/Kconfig.xmc4xxx"
 # zephyr-keep-sorted-stop
-source "drivers/gpio/Kconfig.rk3588"
+source "drivers/gpio/Kconfig.rockchip"
 
 endif # GPIO

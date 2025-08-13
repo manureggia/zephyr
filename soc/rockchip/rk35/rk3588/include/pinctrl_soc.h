@@ -1,36 +1,28 @@
-/*
- * File: zephyr/soc/rockchip/include/pinctrl_soc.h
- * Versione corretta per la nuova architettura pinctrl
- */
-#ifndef ZEPHYR_SOC_ROCKCHIP_PINCTRL_SOC_H_
-#define ZEPHYR_SOC_ROCKCHIP_PINCTRL_SOC_H_
-
-#include <zephyr/devicetree.h>
+/* soc/rockchip/rk35/rk3588/include/pinctrl_soc.h */
+#pragma once
 #include <zephyr/types.h>
+#include <zephyr/device.h>
+#include <zephyr/sys/util.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-/* Il tipo base per la configurazione di un pin è un intero a 32-bit */
+/* Tipo dei “pin descrittori” codificati dal DTS (RK_PINCFG(...)) */
 typedef uint32_t pinctrl_soc_pin_t;
 
-/*
- * Macro per inizializzare un singolo pin dall'array 'rockchip,pins' nel DTS.
- * Semplicemente prende il valore intero dall'array alla posizione 'idx'.
+/* --- Se usi la codifica RK_PINCFG in DTS, definisci qui i decoder C --- */
+/* Esempio di layout (ADATTA ai bit reali che usi nel tuo rk3588-pinctrl.h):
+ * [31:28]=bank, [27:20]=pin, [19:16]=func, [15:12]=pull, [11:8]=drive, [0]=smt
  */
-#define Z_PINCTRL_STATE_PIN_INIT(node_id, prop, idx) \
-	DT_PROP_BY_IDX(node_id, prop, idx),
+#define RK_PIN_BANK(v)   (((v) >> 28) & 0xF)
+#define RK_PIN_NUM(v)    (((v) >> 20) & 0xFF)
+#define RK_PIN_FUNC(v)   (((v) >> 16) & 0xF)
+#define RK_PIN_PULL(v)   (((v) >> 12) & 0xF)
+#define RK_PIN_DRIVE(v)  (((v) >> 8)  & 0xF)
+#define RK_PIN_SMT(v)    ((v) & 0x1)
 
-/*
- * Macro per creare un array di inizializzatori C
- * iterando su tutti gli elementi della proprietà 'rockchip,pins'.
- */
-#define Z_PINCTRL_STATE_PINS_INIT(node_id, prop)			\
-	{DT_FOREACH_PROP_ELEM_SEP(node_id, prop, Z_PINCTRL_STATE_PIN_INIT, (,))}
+/* Descrizione delle basi IOC/GRF (se ti serve per l’implementazione reale) */
+struct rk3588_ioc_desc {
+	uintptr_t pmu0_grf, pmu1_grf, pmu2_grf, sys_grf;
+	uintptr_t pmu0_ioc, pmu1_ioc, pmu2_ioc, bus_ioc;
+};
 
-#ifdef __cplusplus
-}
-#endif
-
-#endif /* ZEPHYR_SOC_ROCKCHIP_PINCTRL_SOC_H_ */
+/* Se vuoi: esponi una get delle basi (in futuro) */
+// const struct rk3588_ioc_desc *rk3588_ioc(void);

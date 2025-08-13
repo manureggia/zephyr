@@ -6,8 +6,7 @@
 #include <arm64/armv8-a.dtsi>
 #include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
 #include <dt-bindings/clock/rk3588-cru.h>
-//#include <dt-bindings/pinctrl/rockchip.h>
-#include "rk3588-pinctrl.h"
+#include <zephyr/dt-bindings/pinctrl/rockchip.h>
 
 #include <mem.h>
 
@@ -19,7 +18,7 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 
-		cpu@000 {
+		cpu@0 {
 			device_type = "cpu";
 			compatible = "arm,cortex-a55";
 			enable-method = "psci";
@@ -125,57 +124,12 @@
 			<0xfd890000 0x4000>,   /* PMU2_IOC */
 			<0xfd894000 0x4000>;   /* BUS_IOC */
 
-		/* CORREZIONE: Aggiunti gli underscore per corrispondere al codice C */
 		reg-names = "pmu0_grf", "pmu1_grf", "pmu2_grf", "sys_grf",
 					"pmu0_ioc", "pmu1_ioc", "pmu2_ioc", "bus_ioc";
-
-		/* Le definizioni dei pin con la macro RK_PINCFG sono corrette */
-		uart2 {
-			uart2_m1_xfer: uart2-m1-xfer {
-				rockchip,pins = <RK_PINCFG(4, 1, RK_FUNC_2, RK_PULL_UP, RK_DRIVE_2MA)>,
-								<RK_PINCFG(4, 0, RK_FUNC_2, RK_PULL_NONE, RK_DRIVE_2MA)>;
-			};
-		};
-		
-		uart6 {
-			uart6m1: uart6-m1-pins {
-				rockchip,pins = <RK_PINCFG(0, 10, RK_FUNC_1, RK_PULL_UP, RK_DRIVE_2MA)>, /* TX */
-								<RK_PINCFG(0, 11, RK_FUNC_1, RK_PULL_NONE, RK_DRIVE_2MA)>; /* RX */
-			};
-		};
 	};
 
 	
 
-	/* TEST UART
-
-	uart1: serial@feb40000 {
-		compatible = "rockchip,rk3588-uart", "ns16550";
-		reg = <0xfeb40000 0x100>;
-		interrupt-parent = <&gic>;
-		interrupts = <GIC_SPI 332 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-		clocks = <&cru SCLK_UART1>, <&cru PCLK_UART1>;
-		clock-names = "baudclk", "apb_pclk";
-		clock-frequency = <350000000>;
-		reg-shift = <2>;
-		status = "disabled";
-	};
-
-	uart6: serial@feb90000 {
-		compatible = "snps,dw-apb-uart";
-		reg = <0xfeb90000 0x10000>;
-		interrupt-parent = <&gic>;
-		interrupts = <GIC_SPI 337 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-		clocks = <&cru SCLK_UART6>, <&cru PCLK_UART6>;
-		clock-names = "baudclk", "apb_pclk";
-		pinctrl-0 = <&uart6m1>;
-		pinctrl-names = "default";
-		reg-shift = <2>;
-		clock-frequency = <350000000>;
-		current-speed = <115200>; 
-		status = "okay";          
-	};
-*/
 	//"rockchip,rk3588-uart,rk3588s-uart",
 	uart2: serial@feb50000 {
 		compatible = "ns16550";
@@ -185,6 +139,7 @@
 		clock-frequency = <350000000>;
 		reg-shift = <2>;
 		status = "disabled";
+		
 	};
 
 	/* GPIO CONFIG */
@@ -199,6 +154,7 @@
 			interrupt-controller;
 			#gpio-cells = <2>;
 			#interrupt-cells = <2>;
+			ngpios = <32>;
 		};
 
 		gpio1: gpio@fec20000 {
@@ -211,6 +167,7 @@
 			interrupt-controller;
 			#gpio-cells = <2>;
 			#interrupt-cells = <2>;
+			ngpios = <32>;
 		};
 
 		gpio2: gpio@fec30000 {
@@ -223,6 +180,7 @@
 			interrupt-controller;
 			#gpio-cells = <2>;
 			#interrupt-cells = <2>;
+			ngpios = <32>;
 		};
 
 		gpio3: gpio@fec40000 {
@@ -235,6 +193,7 @@
 			interrupt-controller;
 			#gpio-cells = <2>;
 			#interrupt-cells = <2>;
+			ngpios = <32>;
 		};
 
 		gpio4: gpio@fec50000 {
@@ -247,6 +206,8 @@
 			interrupt-controller;
 			#gpio-cells = <2>;
 			#interrupt-cells = <2>;
+			ngpios = <32>;
 		};
 
 };
+

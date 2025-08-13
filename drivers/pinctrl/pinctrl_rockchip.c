@@ -1,77 +1,43 @@
-/*
- * File: zephyr/drivers/pinctrl/pinctrl_rockchip.c
- * AGGIUNTA LA FUNZIONE WRAPPER MANCANTE
- */
+/* SPDX-License-Identifier: Apache-2.0 */
+#include <zephyr/kernel.h>
 #include <zephyr/drivers/pinctrl.h>
-#include <zephyr/logging/log.h>
-#include <zephyr/sys/sys_io.h>
 
-LOG_MODULE_REGISTER(pinctrl_rockchip, CONFIG_PINCTRL_LOG_LEVEL);
+#include <pinctrl_soc.h>
 
-#define RK_PIN_BANK_GET(cfg)     (((cfg) >> 20) & 0x7)
-#define RK_PIN_BANK_PIN_GET(cfg) (((cfg) >> 16) & 0x1F)
-#define RK_PIN_FUNC_GET(cfg)     (((cfg) >> 0) & 0x7)
-#define RK_PIN_PULL_GET(cfg)     (((cfg) >> 4) & 0x7)
-#define RK_PIN_DRIVE_GET(cfg)    (((cfg) >> 8) & 0xF)
-
-#define NODE_ID DT_NODELABEL(pinctrl)
-static const uintptr_t grf_base[] = {
-	DT_REG_ADDR_BY_NAME(NODE_ID, pmu0_grf),
-	DT_REG_ADDR_BY_NAME(NODE_ID, pmu1_grf),
-	DT_REG_ADDR_BY_NAME(NODE_ID, pmu2_grf),
-	DT_REG_ADDR_BY_NAME(NODE_ID, sys_grf),
-};
-
-static uintptr_t get_grf_base_for_bank(uint32_t bank)
+/*
+ * Implementazione richiesta dall’infrastruttura pinctrl “nuova” di Zephyr.
+ * La versione generica di Zephyr fornisce pinctrl_configure_pins(...)
+ * che chiama questa per ogni pin.
+ */
+int pinctrl_configure_pin(pinctrl_soc_pin_t v, uintptr_t port)
 {
-	switch (bank) {
-	case 0: case 1: return grf_base[1]; /* pmu1_grf */
-	case 2: return grf_base[3]; /* sys_grf */
-	case 3: return grf_base[0]; /* pmu0_grf */
-	case 4: return grf_base[2]; /* pmu2_grf */
-	default: return 0;
-	}
-}
+	/* TODO: estrai i campi dal valore 'v' con i macro del tuo pinctrl_soc.h
+	 * (es. banca, numero pin, funzione, pull, drive, ecc.)
+	 *
+	 * Esempio (inventato): 
+	 *  unsigned bank = RK_PIN_BANK(v);
+	 *  unsigned pin  = RK_PIN_NUM(v);
+	 *  unsigned func = RK_PIN_FUNC(v);
+	 *  unsigned pull = RK_PIN_PULL(v);
+	 *  void *base = (void *)port; // cookie passato da Zephyr, tipicamente base regs
+	 *  programma i registri partendo da base + offset(bank, pin) ...
+	 */
 
-/* Funzione specifica del SoC (implementazione vera e propria) */
-int pinctrl_soc_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt, uintptr_t reg)
-{
-	ARG_UNUSED(reg);
-	uintptr_t grf;
+	ARG_UNUSED(v);
+	ARG_UNUSED(port);
 
-	for (uint8_t i = 0; i < pin_cnt; i++) {
-		pinctrl_soc_pin_t pincfg = pins[i];
-		uint32_t bank = RK_PIN_BANK_GET(pincfg);
-		uint32_t pin = RK_PIN_BANK_PIN_GET(pincfg);
-		uint32_t func = RK_PIN_FUNC_GET(pincfg);
-		uint32_t pull = RK_PIN_PULL_GET(pincfg);
-
-		grf = get_grf_base_for_bank(bank);
-		if (!grf) {
-			LOG_ERR("Banco %u non valido", bank);
-			return -EINVAL;
-		}
-
-		uint32_t mux_offset = (bank * 0x10) + ((pin / 4) * 4);
-		uint32_t mux_shift = (pin % 4) * 4;
-		sys_write32((0xFU << (mux_shift + 16)) | (func << mux_shift),
-			    grf + mux_offset);
-
-		uint32_t pull_offset = (bank * 0x10) + ((pin / 8) * 4);
-		uint32_t pull_shift = (pin % 8) * 2;
-		sys_write32((0x3U << (pull_shift + 16)) | (pull << pull_shift),
-			    grf + 0x40 + pull_offset);
-	}
-
+	/* Ritorna 0 se ok, oppure -errno */
 	return 0;
 }
 
-/*
- * NUOVA FUNZIONE WRAPPER:
- * Forniamo l'implementazione di pinctrl_configure_pins che il linker sta cercando.
- * Questa funzione chiama semplicemente la nostra implementazione specifica.
- */
-int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt, uintptr_t reg)
+int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,
+			   uintptr_t reg)
 {
-	return pinctrl_soc_configure_pins(pins, pin_cnt, reg);
+	ARG_UNUSED(reg);
+
+	for (uint8_t i = 0U; i < pin_cnt; i++) {
+		pinctrl_configure_pin(pins, 0/*TODO: MODIFICARE*/);
+	}
+
+	return 0;
 }

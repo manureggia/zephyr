@@ -1,20 +1,31 @@
 # SPDX-License-Identifier: Apache-2.0
-
-description: Rockchip RK3588 Pinctrl Controller
+title: Rockchip RK3588 Pinctrl
 
 compatible: "rockchip,rk3588-pinctrl"
 
-include: [pinctrl-device.yaml, base.yaml]
+include: base.yaml
+
+description: >
+  Pinctrl RK3588: mux (4-bit/pin), pull, drive, schmitt via PMU*_IOC e BUS_IOC.
 
 properties:
   reg:
+    type: array
     required: true
-    description: |
-      Specifies base addresses of the General Register Files (GRF)
-      used for pinctrl.
 
   reg-names:
+    type: string-array
     required: true
-    description: |
-      Should contain the names of the register blocks specified in 'reg'.
-      E.g., "pmu0grf", "pmu1grf", "pmu2grf", "sysgrf".
+    description: >
+      Nomi per le regioni in 'reg' (es.: "pmu0_grf","pmu1_grf","pmu2_grf",
+      "sys_grf","pmu0_ioc","pmu1_ioc","pmu2_ioc","bus_ioc").
+
+# Stati pinctrl (vendor) con array di u32 codificati (RK_PINCFG)
+child-binding:
+  description: Rockchip pin state
+  properties:
+    rockchip,pins:
+      type: array
+      required: true
+      description: >
+        Array di u32 generati con RK_PINCFG(bank, pin, func, pull, drive).

@@ -1,10 +1,12 @@
-description: Rockchip RK3588 GPIO controller
-
+# SPDX-License-Identifier: Apache-2.0
+title: Rockchip RK3588 GPIO controller
 compatible: "rockchip,rk3588-gpio"
 
 include:
-  - name: gpio-controller.yaml
-  - name: interrupt-controller.yaml
+  - base.yaml
+  - gpio-controller.yaml        # definisce gpio-controller e #gpio-cells
+  - interrupt-controller.yaml   # definisce interrupt-controller e #interrupt-cells
+  - pinctrl-device.yaml         # abilita pinctrl-0 / pinctrl-names
 
 properties:
   reg:
@@ -12,22 +14,30 @@ properties:
     required: true
 
   interrupts:
-    type: array
     required: true
+
+  interrupt-parent:
+    type: phandle
+
+  ngpios:
+    type: int
+    required: true
+    description: Number of GPIO lines in this bank (usually 32)
 
   clocks:
     type: phandle-array
-    required: true
+    required: false
 
-  gpio-controller:
-    type: boolean
-    required: true
+  clock-names:
+    type: string-array
+    required: false
 
-  interrupt-controller:
-    type: boolean
-    required: true
-
-  '#interrupt-cells':
-    type: int
+  "#gpio-cells":
     const: 2
-    required: true
+
+  "#interrupt-cells":
+    const: 2
+
+gpio-cells:
+  - pin
+  - flags

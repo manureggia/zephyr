@@ -1,6 +1,0 @@
-if GPIO
-config GPIO_ROCKCHIP
-    bool "Rockchip GPIO driver"
-    default y
-    depends on SOC_FAMILY_ROCKCHIP
-endif

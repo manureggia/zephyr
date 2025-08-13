@@ -29,8 +29,6 @@ CONFIG_PM_CPU_OPS_PSCI=y
 # Device Tree
 CONFIG_UART_NS16550=y
 
-#CONFIG_UART_DW=y
-
 #####################
 #### RK Drivers  ####
 #####################
