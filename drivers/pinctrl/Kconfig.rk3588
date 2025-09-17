@@ -1,0 +1,11 @@
+menu "Rockchip RK3588 pinctrl"
+
+config PINCTRL_ROCKCHIP_RK3588
+    bool "RK3588 pinctrl (BUS_IOC, mux only)"
+    depends on PINCTRL
+    depends on DT_HAS_ROCKCHIP_RK3588_PINCTRL_ENABLED
+    help
+      Driver pinctrl basilare per RK3588 (BUS_IOC, banche GPIO1..GPIO4).
+      Supporta la selezione funzione (IOMUX). PMU_IOC/GPIO0, pull/drive TBD.
+
+endmenu

@@ -10,4 +10,4 @@ static int rockchip_rk3588_init(void)
 	return 0;
 }
 
-SYS_INIT(rockchip_rk3588_init, PRE_KERNEL_1, 0);
+SYS_INIT(rockchip_rk3588_init, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);

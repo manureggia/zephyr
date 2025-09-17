@@ -5,14 +5,18 @@
 
 #include <arm64/armv8-a.dtsi>
 #include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
+#include <zephyr/dt-bindings/pinctrl/rockchip-rk3588-pinctrl.h>
 #include <dt-bindings/clock/rk3588-cru.h>
-#include <zephyr/dt-bindings/pinctrl/rockchip.h>
 
 #include <mem.h>
 
-/ {
+ / {
 	#address-cells = <1>;
 	#size-cells = <1>;
+
+	chosen {
+		zephyr,code-partition = &code_partition;
+	};
 
 	cpus {
 		#address-cells = <1>;
@@ -75,6 +79,7 @@
 		compatible = "rockchip,rk3588-cru";
 		reg = <0xfd7c0000 0x1000>;
 		#clock-cells = <1>;
+		#reset-cells = <1>;
 	};
 
 	gic: interrupt-controller@fe600000  {
@@ -87,10 +92,28 @@
 		status = "okay";
 	};
 
-	sram0: memory@d400000 {
-		reg = <0x0d400000 DT_SIZE_M(128)>;
-	};
-	
+	sram0: sram@10000000 {
+        compatible = "mmio-sram";
+        reg = <0x10000000 0x08000000>; /* 128 MiB */
+        /* Nel bus SRAM usiamo offset e size a 32 bit (1 cell) */
+        #address-cells = <1>;
+        #size-cells = <1>;
+        /* ranges: child-addr(1)  parent-addr(2)      size(1) */
+        ranges = <0x0 0x10000000 0x08000000>;
+
+        partitions: partitions {
+            compatible = "fixed-partitions";
+            #address-cells = <1>;
+            #size-cells = <1>;
+
+            /* Code RX all'inizio: offset 0 (== 0x10000000 fisico), 16 MiB */
+            code_partition: partition@0 {
+                label = "code";
+                reg = <0x00000000  0x01000000>;  /* 16 MiB */
+            };
+        };
+    };
+
 	psci {
 		compatible = "arm,psci-0.2", "arm,psci";
 		method = "smc";
@@ -110,104 +133,74 @@
 	};
 
 
-
-	pinctrl: pinctrl@fd5f0000 {
-		compatible = "rockchip,rk3588-pinctrl";
-		status = "okay";
-
-		reg = <0xfd5f0000 0x4000>,   /* PMU0GRF */
-			<0xfd5f4000 0x4000>,   /* PMU1GRF */
-			<0xfd5f8000 0x4000>,   /* PMU2GRF */
-			<0xfd7c0000 0x4000>,   /* SYSGRF */
-			<0xfd5e8000 0x4000>,   /* PMU0_IOC */
-			<0xfd5ec000 0x4000>,   /* PMU1_IOC */
-			<0xfd890000 0x4000>,   /* PMU2_IOC */
-			<0xfd894000 0x4000>;   /* BUS_IOC */
-
-		reg-names = "pmu0_grf", "pmu1_grf", "pmu2_grf", "sys_grf",
-					"pmu0_ioc", "pmu1_ioc", "pmu2_ioc", "bus_ioc";
-	};
-
 	
-
-	//"rockchip,rk3588-uart,rk3588s-uart",
-	uart2: serial@feb50000 {
+	uart2: serial@feb50000  {
 		compatible = "ns16550";
 		reg = <0xfeb50000 0x1000>;
 		interrupt-parent = <&gic>;
 		interrupts = <GIC_SPI 333 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-		clock-frequency = <350000000>;
+		status = "okay";
 		reg-shift = <2>;
-		status = "disabled";
-		
+		clock-frequency = <350000000>;
+		label = "UART_2";
 	};
 
-	/* GPIO CONFIG */
+	/* Pinctrl BUS_IOC controller */
+	pinctrl: pinctrl@fd5f0000 {
+		compatible = "rockchip,rk3588-pinctrl";
+		reg = <0xfd5f0000 0x00010000>; /* BUS_IOC */
+		status = "okay";
 
-		gpio0: gpio@fd8a0000 {
-			compatible = "rockchip,rk3588-gpio";
-			reg = <0xfd8a0000 0x100>;
-			interrupt-parent = <&gic>;
-			interrupts = <GIC_SPI 277 4 0>;
-			clocks = <&cru PCLK_GPIO0>, <&cru DBCLK_GPIO0>;
-			gpio-controller;
-			interrupt-controller;
-			#gpio-cells = <2>;
-			#interrupt-cells = <2>;
-			ngpios = <32>;
+		/* Stati per pin del 40-pin header: pin 11 = GPIO1_A4, pin 12 = GPIO3_A1 */
+		gpio1a4_as_gpio: gpio1a4-as-gpio {
+			/* bank=1, port=A(0), pin=4, func=GPIO(0) */
+			pinmux = <RK3588_PINMUX(1, RK3588_PORT_A, 4, RK3588_FUNC_GPIO)>;
 		};
 
-		gpio1: gpio@fec20000 {
-			compatible = "rockchip,rk3588-gpio";
-			reg = <0xfec20000 0x100>;
-			interrupt-parent = <&gic>;
-			interrupts = <GIC_SPI 278 4 0>;
-			clocks = <&cru PCLK_GPIO1>, <&cru DBCLK_GPIO1>;
-			gpio-controller;
-			interrupt-controller;
-			#gpio-cells = <2>;
-			#interrupt-cells = <2>;
-			ngpios = <32>;
+		gpio3a1_as_gpio: gpio3a1-as-gpio {
+			/* bank=3, port=A(0), pin=1, func=GPIO(0) */
+			pinmux = <RK3588_PINMUX(3, RK3588_PORT_A, 1, RK3588_FUNC_GPIO)>;
 		};
+	};
 
-		gpio2: gpio@fec30000 {
-			compatible = "rockchip,rk3588-gpio";
-			reg = <0xfec30000 0x100>;
-			interrupt-parent = <&gic>;
-			interrupts = <GIC_SPI 279 4 0>;
-			clocks = <&cru PCLK_GPIO2>, <&cru DBCLK_GPIO2>;
-			gpio-controller;
-			interrupt-controller;
-			#gpio-cells = <2>;
-			#interrupt-cells = <2>;
-			ngpios = <32>;
-		};
+	/* Helper consumer per applicare lo state via pinctrl_apply_state() */
+	my_pinctrl: my-pinctrl {
+		compatible = "zephyr,pinctrl-consumer";
+		pinctrl-0 = <&gpio1a4_as_gpio &gpio3a1_as_gpio>;
+		pinctrl-names = "default";
+		status = "okay";
+	};
 
-		gpio3: gpio@fec40000 {
-			compatible = "rockchip,rk3588-gpio";
-			reg = <0xfec40000 0x100>;
-			interrupt-parent = <&gic>;
-			interrupts = <GIC_SPI 280 4 0>;
-			clocks = <&cru PCLK_GPIO3>, <&cru DBCLK_GPIO3>;
-			gpio-controller;
-			interrupt-controller;
-			#gpio-cells = <2>;
-			#interrupt-cells = <2>;
-			ngpios = <32>;
-		};
+	/* GPIO1 controller (for header pin 11 = GPIO1_A4) */
+	gpio1: gpio@fec20000 {
+		compatible = "rockchip,rk3588-gpio";
+		reg = <0xfec20000 0x00000100>;
+		rockchip,bank-index = <1>;
+		clocks = <&cru PCLK_GPIO1>, <&cru DBCLK_GPIO1>;
+		clock-names = "pclk", "dbclk";
+		resets = <&cru SRST_P_GPIO1>, <&cru SRST_GPIO1>;
+		reset-names = "pclk", "core";
+		gpio-controller;
+		#gpio-cells = <2>;
+		label = "GPIO1";
+		status = "okay";
+	};
 
-		gpio4: gpio@fec50000 {
-			compatible = "rockchip,rk3588-gpio";
-			reg = <0xfec50000 0x100>;
-			interrupt-parent = <&gic>;
-			interrupts = <GIC_SPI 281 4 0>;
-			clocks = <&cru PCLK_GPIO4>, <&cru DBCLK_GPIO4>;
-			gpio-controller;
-			interrupt-controller;
-			#gpio-cells = <2>;
-			#interrupt-cells = <2>;
-			ngpios = <32>;
-		};
+	/* GPIO3 controller (for header pin 12 = GPIO3_A1) */
+	gpio3: gpio@fec40000 {
+		compatible = "rockchip,rk3588-gpio";
+		reg = <0xfec40000 0x00000100>;
+		rockchip,bank-index = <3>;
+		clocks = <&cru PCLK_GPIO3>, <&cru DBCLK_GPIO3>;
+		clock-names = "pclk", "dbclk";
+		resets = <&cru SRST_P_GPIO3>, <&cru SRST_GPIO3>;
+		reset-names = "pclk", "core";
+		gpio-controller;
+		#gpio-cells = <2>;
+		label = "GPIO3";
+		status = "okay";
+	};
+
+	
 
 };
-

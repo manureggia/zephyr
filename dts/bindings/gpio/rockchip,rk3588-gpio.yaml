@@ -1,42 +1,36 @@
 # SPDX-License-Identifier: Apache-2.0
-title: Rockchip RK3588 GPIO controller
+title: Rockchip RK3588 GPIO Bank
+
+description: >
+  GPIO controller for RK3588 (DW APB GPIO-like, single-port A).
+
 compatible: "rockchip,rk3588-gpio"
 
-include:
-  - base.yaml
-  - gpio-controller.yaml        # definisce gpio-controller e #gpio-cells
-  - interrupt-controller.yaml   # definisce interrupt-controller e #interrupt-cells
-  - pinctrl-device.yaml         # abilita pinctrl-0 / pinctrl-names
+include: [gpio-controller.yaml, base.yaml]
 
 properties:
   reg:
-    type: array
     required: true
-
   interrupts:
-    required: true
-
-  interrupt-parent:
-    type: phandle
-
-  ngpios:
-    type: int
-    required: true
-    description: Number of GPIO lines in this bank (usually 32)
-
+    required: false
   clocks:
     type: phandle-array
     required: false
-
   clock-names:
     type: string-array
     required: false
-
-  "#gpio-cells":
-    const: 2
-
-  "#interrupt-cells":
-    const: 2
+  resets:
+    type: phandle-array
+    required: false
+  reset-names:
+    type: string-array
+    required: false
+  rockchip,bank-index:
+    type: int
+    required: true
+    description: Bank index (0..4)
+  label:
+    required: false
 
 gpio-cells:
   - pin

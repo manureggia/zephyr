@@ -1,31 +1,23 @@
 # SPDX-License-Identifier: Apache-2.0
-title: Rockchip RK3588 Pinctrl
+title: Rockchip RK3588 BUS_IOC pinctrl
+
+description: >
+  Controller pinctrl RK3588, blocco BUS_IOC (GPIO1..GPIO4).
+  Supporta IOMUX (funzione). Pull/drive non ancora gestiti qui.
 
 compatible: "rockchip,rk3588-pinctrl"
 
-include: base.yaml
-
-description: >
-  Pinctrl RK3588: mux (4-bit/pin), pull, drive, schmitt via PMU*_IOC e BUS_IOC.
+include: [base.yaml]
 
 properties:
   reg:
-    type: array
     required: true
 
-  reg-names:
-    type: string-array
-    required: true
-    description: >
-      Nomi per le regioni in 'reg' (es.: "pmu0_grf","pmu1_grf","pmu2_grf",
-      "sys_grf","pmu0_ioc","pmu1_ioc","pmu2_ioc","bus_ioc").
-
-# Stati pinctrl (vendor) con array di u32 codificati (RK_PINCFG)
 child-binding:
-  description: Rockchip pin state
+  description: Pinctrl state (lista di pinmux)
   properties:
-    rockchip,pins:
+    pinmux:
       type: array
       required: true
       description: >
-        Array di u32 generati con RK_PINCFG(bank, pin, func, pull, drive).
+        Lista di u32 ciascuno codificato con RK3588_PINMUX(bank, port, pin, func).

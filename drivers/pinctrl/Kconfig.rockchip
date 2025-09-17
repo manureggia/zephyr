@@ -1,7 +1,0 @@
-menu "Rockchip pinctrl drivers"
-config PINCTRL_ROCKCHIP
-  bool "Pinctrl for RK3588"
-  depends on PINCTRL
-  depends on DT_HAS_ROCKCHIP_RK3588_PINCTRL_ENABLED
-  default y
-endmenu

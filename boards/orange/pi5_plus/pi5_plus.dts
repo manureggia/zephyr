@@ -5,54 +5,25 @@
 /dts-v1/;
 
 #include <arm64/rockchip/rk3588.dtsi>
-#include <dt-bindings/pinctrl/rockchip.h>
-#include <zephyr/dt-bindings/gpio/gpio.h>     
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
 
 
 / {
 	model = "OrangePi 5 Plus";
 	compatible = "rockchip,rk3588";
-
+	
 	chosen {
 		zephyr,sram = &sram0;
 		zephyr,console = &uart2;
 		zephyr,shell-uart = &uart2;
 	};
 
-	aliases {
-		led0 = &status_led0;
-	};
-
-	leds {
-		compatible = "gpio-leds";
-		status_led0: led0 {
-			gpios = <&gpio2 10 GPIO_ACTIVE_HIGH>;
-			label = "status_led0";
-		};
-	};
-
-	
-
 };
+
+
 
 &uart2 {
 	status = "okay";
 };
 
-&cru {
-	status = "okay";
-};
-
-&pinctrl {
-	status = "okay";
-	led0_gpio: led0-gpio {
-		//rockchip,pins = <RK_PINCFG(2, 10, RK_FUNC_0, RK_PULL_NONE, RK_DRIVE_4MA)>;
-		rockchip,pins = <0x22802000>;
-	};
-};
-
-&gpio2 {
-	pinctrl-names = "default";
-	pinctrl-0 = <&led0_gpio>;
-	status = "okay";
-};

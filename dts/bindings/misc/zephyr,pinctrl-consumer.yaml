@@ -1,0 +1,19 @@
+# SPDX-License-Identifier: Apache-2.0
+title: Generic pinctrl consumer for application use
+
+description: >
+  Dummy device so that application code can use PINCTRL_DT_DEFINE /
+  pinctrl_apply_state() con un nodo "fittizio".
+
+compatible: "zephyr,pinctrl-consumer"
+
+include: base.yaml
+
+properties:
+  pinctrl-0:
+    type: phandles
+    required: false
+  pinctrl-names:
+    type: string-array
+    required: false
+

@@ -4,12 +4,18 @@ description: Rockchip RK3588 Clock and Reset Unit
 
 compatible: "rockchip,rk3588-cru"
 
-include: base.yaml
+include: [clock-controller.yaml, reset-controller.yaml, base.yaml]
 
 properties:
   "#clock-cells":
     type: int
     const: 1
+  "#reset-cells":
+    type: int
+    const: 1
 
 clock-cells:
+  - id
+
+reset-cells:
   - id
