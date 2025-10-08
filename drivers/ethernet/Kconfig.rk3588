@@ -1,0 +1,19 @@
+config ETH_RK3588_DWMAC
+	bool "Rockchip RK3588 DWMAC glue"
+	depends on ETHERNET
+	depends on DT_HAS_SNPS_DESIGNWARE_ETHERNET_ENABLED
+	depends on SOC_RK3588
+	select ETH_DWMAC
+	help
+	  Enable the glue driver that bridges the Rockchip RK3588 GMAC to the
+	  generic Synopsys DesignWare MAC core. The driver takes care of the
+	  clock/reset/pinctrl plumbing, MDIO access and link management.
+
+config ETH_RK3588_RGMII_DELAY_DEFAULT
+	int "Default RK3588 RGMII internal delay (ps)"
+	default 1800
+	depends on ETH_RK3588_DWMAC
+	help
+	  Default internal delay applied on RK3588 when device tree does not
+	  specify rockchip,tx-delay-ps / rockchip,rx-delay-ps. Value is in
+	  picoseconds.

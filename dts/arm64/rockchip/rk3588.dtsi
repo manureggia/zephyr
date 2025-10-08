@@ -161,6 +161,48 @@
 			/* bank=3, port=A(0), pin=1, func=GPIO(0) */
 			pinmux = <RK3588_PINMUX(3, RK3588_PORT_A, 1, RK3588_FUNC_GPIO)>;
 		};
+		
+		/omit-if-no-ref/ gmac0_rgmii_pins: gmac0-rgmii-pins {
+			pinmux =
+				/* MIIM: MDC/MDIO */
+				<RK3588_PINMUX(4, RK3588_PORT_C, 4, 1)>, /* gmac0_mdc  */
+				<RK3588_PINMUX(4, RK3588_PORT_C, 5, 1)>, /* gmac0_mdio */
+				/* Clocks */
+				<RK3588_PINMUX(2, RK3588_PORT_B, 0, 1)>, /* gmac0_rxclk */
+				<RK3588_PINMUX(2, RK3588_PORT_B, 3, 1)>, /* gmac0_txclk */
+				/* RX bus */
+				<RK3588_PINMUX(2, RK3588_PORT_C, 1, 1)>, /* rxd0 */
+				<RK3588_PINMUX(2, RK3588_PORT_C, 2, 1)>, /* rxd1 */
+				<RK3588_PINMUX(2, RK3588_PORT_A, 6, 1)>, /* rxd2 */
+				<RK3588_PINMUX(2, RK3588_PORT_A, 7, 1)>, /* rxd3 */
+				<RK3588_PINMUX(4, RK3588_PORT_C, 2, 1)>, /* rxdv/crs */
+				/* TX bus */
+				<RK3588_PINMUX(2, RK3588_PORT_B, 6, 1)>, /* txd0 */
+				<RK3588_PINMUX(2, RK3588_PORT_B, 7, 1)>, /* txd1 */
+				<RK3588_PINMUX(2, RK3588_PORT_B, 1, 1)>, /* txd2 */
+				<RK3588_PINMUX(2, RK3588_PORT_B, 2, 1)>, /* txd3 */
+				<RK3588_PINMUX(2, RK3588_PORT_C, 0, 1)>; /* txen */
+		};
+
+		/* --- GMAC1 RGMII pins (mux reali da pinctrl mainline) --- */
+		/omit-if-no-ref/ gmac1_rgmii_pins: gmac1-rgmii-pins {
+			pinmux =
+				/* Clocks */
+				<RK3588_PINMUX(3, RK3588_PORT_A, 5, 1)>, /* gmac1_rxclk */
+				<RK3588_PINMUX(3, RK3588_PORT_A, 4, 1)>, /* gmac1_txclk */
+				/* RX bus */
+				<RK3588_PINMUX(3, RK3588_PORT_A, 7, 1)>, /* rxd0 */
+				<RK3588_PINMUX(3, RK3588_PORT_B, 0, 1)>, /* rxd1 */
+				<RK3588_PINMUX(3, RK3588_PORT_A, 2, 1)>, /* rxd2 */
+				<RK3588_PINMUX(3, RK3588_PORT_A, 3, 1)>, /* rxd3 */
+				<RK3588_PINMUX(3, RK3588_PORT_B, 1, 1)>, /* rxdv/crs */
+				/* TX bus */
+				<RK3588_PINMUX(3, RK3588_PORT_B, 3, 1)>, /* txd0 */
+				<RK3588_PINMUX(3, RK3588_PORT_B, 4, 1)>, /* txd1 */
+				<RK3588_PINMUX(3, RK3588_PORT_A, 0, 1)>, /* txd2 */
+				<RK3588_PINMUX(3, RK3588_PORT_A, 1, 1)>, /* txd3 */
+				<RK3588_PINMUX(3, RK3588_PORT_B, 5, 1)>; /* txen */
+		};
 	};
 
 	/* Helper consumer per applicare lo state via pinctrl_apply_state() */
@@ -201,6 +243,45 @@
 		status = "okay";
 	};
 
-	
+	gmac0: ethernet@fe1b0000 {
+		compatible = "rockchip,rk3588-dwmac", "snps,designware-ethernet";
+		reg = <0xfe1b0000 0x10000>;
+		interrupt-parent = <&gic>;
+		interrupts = <GIC_SPI 227 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 226 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		clocks = <&cru ACLK_GMAC0>, <&cru PCLK_GMAC0>,
+			 <&cru CLK_GMAC_125M>, <&cru CLK_GMAC_50M>;
+		clock-names = "aclk", "pclk", "tx", "rx";
+		resets = <&cru SRST_A_GMAC0>;
+		reset-names = "stmmac";
+		pinctrl-0 = <&gmac0_rgmii_pins>;
+		pinctrl-names = "default";
+		phy-addr = <1>;
+		phy-connection-type = "rgmii";
+		rockchip,tx-delay-ps = <1800>;
+		rockchip,rx-delay-ps = <1800>;
+		status = "disabled";
+	};
+
+	gmac1: ethernet@fe1c0000 {
+		compatible = "rockchip,rk3588-dwmac", "snps,designware-ethernet";
+		reg = <0xfe1c0000 0x10000>;
+		interrupt-parent = <&gic>;
+		interrupts = <GIC_SPI 234 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 233 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		clocks = <&cru ACLK_GMAC1>, <&cru PCLK_GMAC1>,
+			 <&cru CLK_GMAC_125M>, <&cru CLK_GMAC_50M>;
+		clock-names = "aclk", "pclk", "tx", "rx";
+		resets = <&cru SRST_A_GMAC1>;
+		reset-names = "stmmac";
+		pinctrl-0 = <&gmac1_rgmii_pins>;
+		pinctrl-names = "default";
+		phy-addr = <1>;
+		phy-connection-type = "rgmii";
+		rockchip,tx-delay-ps = <1800>;
+		rockchip,rx-delay-ps = <1800>;
+		status = "disabled";
+	};
+
 
 };

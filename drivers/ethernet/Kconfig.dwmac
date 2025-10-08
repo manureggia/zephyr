@@ -40,6 +40,7 @@ config ETH_DWMAC_MMU
 
 config DWMAC_NB_TX_DESCS
 	int "Number of entries in the transmit descriptor ring"
+	default 64 if ETH_RK3588_DWMAC
 	default 16
 	range 4 128
 	help
@@ -53,6 +54,7 @@ config DWMAC_NB_TX_DESCS
 
 config DWMAC_NB_RX_DESCS
 	int "Number of entries in the receive descriptor ring"
+	default 128 if ETH_RK3588_DWMAC
 	default 16
 	range 4 128
 	help

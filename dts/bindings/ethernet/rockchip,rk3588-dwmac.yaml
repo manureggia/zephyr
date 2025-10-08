@@ -1,0 +1,46 @@
+# SPDX-License-Identifier: (GPL-2.0-or-later OR MIT)
+
+title: Rockchip RK3588 DWMAC Ethernet Controller
+
+description: |
+  Glue layer for the RK3588 GMAC instances built on top of the Synopsys
+  DesignWare MAC (QoS) IP. This binding augments the generic DWMAC binding
+  with Rockchip specific clock/reset and delay properties.
+
+compatible: "rockchip,rk3588-dwmac"
+
+include:
+  - name: snps,designware-ethernet.yaml
+  - name: pinctrl-device.yaml
+
+properties:
+  clocks:
+    type: phandle-array
+    required: true
+    description: Clocks feeding the controller (usually aclk, pclk, tx, rx).
+
+  clock-names:
+    type: string-array
+    required: true
+
+  resets:
+    type: phandle-array
+    description: Reset line controlling the DWMAC core.
+
+  reset-names:
+    type: string-array
+
+  rockchip,tx-delay-ps:
+    type: int
+    description: Optional RGMII TX clock delay in picoseconds.
+    default: 1800
+
+  rockchip,rx-delay-ps:
+    type: int
+    description: Optional RGMII RX clock delay in picoseconds.
+    default: 1800
+
+  phy-addr:
+    type: int
+    description: MDIO address of the external PHY.
+    required: true
