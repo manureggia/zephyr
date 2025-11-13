@@ -13,10 +13,7 @@
 
 LOG_MODULE_REGISTER(app, LOG_LEVEL_INF);
 
-/*
- * Usa l'alias led0 definito nella board (header pin 11 = GPIO1_A4) cosi da
- * ereditare automaticamente il controller e i flag (active high/low).
- */
+
 static const struct gpio_dt_spec user_led = GPIO_DT_SPEC_GET(DT_ALIAS(led0), gpios);
 
 #define BLINK_PERIOD_MS     1000U
