@@ -145,30 +145,47 @@
 		label = "UART_2";
 	};
 
-	/* Pinctrl BUS_IOC controller */
-	pinctrl: pinctrl@fd5f0000 {
+	/* IOC aggregator; BUS_IOC is at +0x8000 */
+	pinctrl: pinctrl@fd5f8000 {
 		compatible = "rockchip,rk3588-pinctrl";
-		reg = <0xfd5f0000 0x00010000>; /* BUS_IOC */
+	reg = <0xfd5f8000 0x00001000>, /* BUS_IOC */
+	      <0xfd5f9000 0x00001000>, /* VCCIO1_4_IOC */
+	      <0xfd5fa000 0x00001000>, /* VCCIO3_5_IOC */
+	      <0xfd5fd000 0x00001000>, /* EMMC_IOC */
+	      <0xfd5fc000 0x00001000>; /* VCCIO6_IOC */
+	reg-names = "bus", "vccio1_4", "vccio3_5", "emmc", "vccio6";
+		clocks = <&cru PCLK_TOP>;
+		clock-names = "pclk_bus_ioc";
+		resets = <&cru SRST_P_TOP_BIU>;
+		reset-names = "rst_p_bus_ioc";
 		status = "okay";
 
-		/* Stati per pin del 40-pin header: pin 11 = GPIO1_A4, pin 12 = GPIO3_A1 */
+		/* Stati per pin del 40-pin header:
+		 *   pin  7 = GPIO1_D6
+		 *   pin 11 = GPIO1_A4
+		 *   pin 12 = GPIO3_A1
+		 */
 		gpio1a4_as_gpio: gpio1a4-as-gpio {
 			/* bank=1, port=A(0), pin=4, func=GPIO(0) */
-			pinmux = <RK3588_PINMUX(1, RK3588_PORT_A, 4, RK3588_FUNC_GPIO)>;
+			pinmux = <RK3588_PINCFG(1, RK3588_PORT_A, 4, RK3588_FUNC_GPIO,
+					RK3588_PINCFG_PULL_NONE |
+					RK3588_PINCFG_DRIVE(8) |
+					RK3588_PINCFG_SCHMITT_ENABLE)>;
 		};
 
 		gpio3a1_as_gpio: gpio3a1-as-gpio {
 			/* bank=3, port=A(0), pin=1, func=GPIO(0) */
-			pinmux = <RK3588_PINMUX(3, RK3588_PORT_A, 1, RK3588_FUNC_GPIO)>;
+			pinmux = <RK3588_PINCFG(3, RK3588_PORT_A, 1, RK3588_FUNC_GPIO,
+						RK3588_PINCFG_PULL_KEEP | RK3588_PINCFG_SCHMITT_KEEP)>;
 		};
-	};
 
-	/* Helper consumer per applicare lo state via pinctrl_apply_state() */
-	my_pinctrl: my-pinctrl {
-		compatible = "zephyr,pinctrl-consumer";
-		pinctrl-0 = <&gpio1a4_as_gpio &gpio3a1_as_gpio>;
-		pinctrl-names = "default";
-		status = "okay";
+		gpio1d6_as_gpio: gpio1d6-as-gpio {
+			/* bank=1, port=D(3), pin=6, func=GPIO(0) -> header pin 7 */
+				pinmux = <RK3588_PINCFG(1, RK3588_PORT_D, 6, RK3588_FUNC_GPIO,
+							(RK3588_PINCFG_PULL_NONE |
+							 RK3588_PINCFG_DRIVE(8) |
+							 RK3588_PINCFG_SCHMITT_ENABLE))>;
+		};
 	};
 
 	/* GPIO1 controller (for header pin 11 = GPIO1_A4) */

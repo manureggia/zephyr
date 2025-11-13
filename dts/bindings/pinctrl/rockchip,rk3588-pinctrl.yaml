@@ -13,6 +13,30 @@ properties:
   reg:
     required: true
 
+  clocks:
+    type: phandle-array
+    required: true
+    description: Phandle to the CRU clock controller providing BUS_IOC pclk
+
+  clock-names:
+    type: string-array
+    required: true
+    enum:
+      - pclk_bus_ioc
+    description: Must contain "pclk_bus_ioc"
+
+  resets:
+    type: phandle-array
+    required: true
+    description: Phandle and specifier for the BUS_IOC reset (from CRU)
+
+  reset-names:
+    type: string-array
+    required: true
+    enum:
+      - rst_p_bus_ioc
+    description: Must contain "rst_p_bus_ioc"
+
 child-binding:
   description: Pinctrl state (lista di pinmux)
   properties:

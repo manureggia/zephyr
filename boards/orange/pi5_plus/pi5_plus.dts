@@ -10,20 +10,33 @@
 
 
 / {
-	model = "OrangePi 5 Plus";
-	compatible = "rockchip,rk3588";
-	
-	chosen {
-		zephyr,sram = &sram0;
-		zephyr,console = &uart2;
-		zephyr,shell-uart = &uart2;
-	};
+    model = "OrangePi 5 Plus";
+    compatible = "rockchip,rk3588";
+    
+    chosen {
+        zephyr,sram = &sram0;
+        zephyr,console = &uart2;
+        zephyr,shell-uart = &uart2;
+    };
+
+    aliases {
+        led0 = &user_led0;
+    };
+
+    leds {
+        compatible = "gpio-leds";
+
+        /* User LED on 40-pin header pin 11 (GPIO1_A4) */
+        user_led0: led_0 {
+            gpios = <&gpio1 4 GPIO_ACTIVE_HIGH>;
+            label = "USER_LED0";
+        };
+    };
 
 };
 
 
 
 &uart2 {
-	status = "okay";
+    status = "okay";
 };
-

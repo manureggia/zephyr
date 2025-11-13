@@ -3,14 +3,17 @@
 #define DT_DRV_COMPAT rockchip_rk3588_gpio
 
 #include <zephyr/kernel.h>
-#include <zephyr/device.h>
+#include <zephyr/device.h> 
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/gpio/gpio_utils.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/devicetree/clocks.h>
+#include <zephyr/devicetree/reset.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/clock_control/rockchip_clock_control.h>
+#include <zephyr/drivers/reset.h>
 #include <zephyr/sys/sys_io.h>
+#include <zephyr/sys/util.h>
 #include <zephyr/sys/mem_manage.h>
 #include <zephyr/kernel/internal/mm.h>
 #include <zephyr/irq.h>
@@ -26,6 +29,7 @@ LOG_MODULE_REGISTER(gpio_rk3588, CONFIG_GPIO_LOG_LEVEL);
 /* Riferimenti: Rockchip TRM (famiglia), DW APB GPIO databook */
 #define RK_GPIO_SWPORTA_DR        0x00
 #define RK_GPIO_SWPORTA_DDR       0x04
+#define RK_GPIO_SWPORTA_CTL       0x08
 #define RK_GPIO_INTEN             0x30
 #define RK_GPIO_INTMASK           0x34
 #define RK_GPIO_INTTYPE_LEVEL     0x38
@@ -46,9 +50,15 @@ struct rk_gpio_cfg {
     int       irq;                    /* opzionale: linea GIC */
     const char *label;
     /* CRU clocks/resets (opzionali) */
-    const struct device *clk_dev;
-    struct rockchip_clk_subsys pclk;
-    struct rockchip_clk_subsys dbclk;
+#if IS_ENABLED(CONFIG_CLOCK_CONTROL)
+	const struct device *clk_dev;
+	struct rockchip_clk_subsys pclk;
+	struct rockchip_clk_subsys dbclk;
+#endif
+#if IS_ENABLED(CONFIG_RESET)
+	const struct reset_dt_spec *resets;
+	uint8_t reset_cnt;
+#endif
 };
 
 struct rk_gpio_data {
@@ -80,6 +90,7 @@ static void rk_gpio_dump_regs(const struct device *dev, const char *tag)
 	const struct rk_gpio_cfg *cfg = dev->config;
 	uint32_t dr = reg_read(dev, RK_GPIO_SWPORTA_DR);
 	uint32_t ddr = reg_read(dev, RK_GPIO_SWPORTA_DDR);
+	uint32_t ctl = reg_read(dev, RK_GPIO_SWPORTA_CTL);
 	uint32_t ext = reg_read(dev, RK_GPIO_EXT_PORTA);
 	uint32_t ien = reg_read(dev, RK_GPIO_INTEN);
 	uint32_t imask = reg_read(dev, RK_GPIO_INTMASK);
@@ -87,8 +98,8 @@ static void rk_gpio_dump_regs(const struct device *dev, const char *tag)
 	uint32_t ipol = reg_read(dev, RK_GPIO_INT_POLARITY);
 	uint32_t ist = reg_read(dev, RK_GPIO_INT_STATUS);
 
-	LOG_DBG("[%s] %s: DR=0x%08x DDR=0x%08x EXT=0x%08x",
-		cfg->label, tag, dr, ddr, ext);
+	LOG_DBG("[%s] %s: DR=0x%08x DDR=0x%08x CTL=0x%08x EXT=0x%08x",
+		cfg->label, tag, dr, ddr, ctl, ext);
 	LOG_DBG("[%s] %s: INTEN=0x%08x MASK=0x%08x TYPE=0x%08x POL=0x%08x IST=0x%08x",
 		cfg->label, tag, ien, imask, itype, ipol, ist);
 }
@@ -97,6 +108,8 @@ static void rk_gpio_dump_regs(const struct device *dev, const char *tag)
 static int rk_gpio_port_get_raw(const struct device *dev, gpio_port_value_t *value)
 {
 	const struct rk_gpio_cfg *cfg = dev->config;
+
+	LOG_DBG("[%s] port_get_raw entry", cfg->label);
 	/* Per i pin configurati in output, riportiamo lo stato dell'output latch
 	 * (dr_shadow). Per gli input, leggiamo EXT.
 	 */
@@ -114,6 +127,9 @@ static int rk_gpio_port_set_masked_raw(const struct device *dev,
 				       gpio_port_value_t value)
 {
 	const struct rk_gpio_cfg *cfg = dev->config;
+
+	LOG_DBG("[%s] port_set_masked_raw entry mask=0x%08x value=0x%08x",
+		cfg->label, (uint32_t)mask, (uint32_t)value);
 	k_spinlock_key_t key = k_spin_lock(&((struct rk_gpio_data *)dev->data)->lock);
 
 	uint32_t dr = reg_read(dev, RK_GPIO_SWPORTA_DR);
@@ -132,17 +148,21 @@ static int rk_gpio_port_set_masked_raw(const struct device *dev,
 
 static int rk_gpio_port_set_bits_raw(const struct device *dev, gpio_port_pins_t pins)
 {
+	LOG_DBG("port_set_bits_raw pins=0x%08x", (uint32_t)pins);
 	return rk_gpio_port_set_masked_raw(dev, pins, pins);
 }
 
 static int rk_gpio_port_clear_bits_raw(const struct device *dev, gpio_port_pins_t pins)
 {
+	LOG_DBG("port_clear_bits_raw pins=0x%08x", (uint32_t)pins);
 	return rk_gpio_port_set_masked_raw(dev, pins, 0);
 }
 
 static int rk_gpio_port_toggle_bits(const struct device *dev, gpio_port_pins_t pins)
 {
 	const struct rk_gpio_cfg *cfg = dev->config;
+
+	LOG_DBG("[%s] toggle_bits entry pins=0x%08x", cfg->label, (uint32_t)pins);
 	k_spinlock_key_t key = k_spin_lock(&((struct rk_gpio_data *)dev->data)->lock);
 	uint32_t dr = reg_read(dev, RK_GPIO_SWPORTA_DR);
 	dr ^= pins;
@@ -159,6 +179,9 @@ static int rk_gpio_port_toggle_bits(const struct device *dev, gpio_port_pins_t p
 static int rk_gpio_configure(const struct device *dev, gpio_pin_t pin, gpio_flags_t flags)
 {
 	const struct rk_gpio_cfg *cfg = dev->config;
+
+	LOG_DBG("[%s] configure entry pin=%u flags=0x%08x",
+		cfg->label, pin, (uint32_t)flags);
 
 	if (pin >= 32) {
 		return -EINVAL;
@@ -205,19 +228,23 @@ static int rk_gpio_configure(const struct device *dev, gpio_pin_t pin, gpio_flag
 static int rk_gpio_pin_interrupt_configure(const struct device *dev,
 		gpio_pin_t pin, enum gpio_int_mode mode, enum gpio_int_trig trig)
 {
+	LOG_DBG("pin_interrupt_configure pin=%u mode=%d trig=%d", pin, mode, trig);
 	ARG_UNUSED(dev); ARG_UNUSED(pin); ARG_UNUSED(mode); ARG_UNUSED(trig);
 	return -ENOTSUP;
 }
 
 static int rk_gpio_manage_callback(const struct device *dev,
-				   struct gpio_callback *cb, bool set)
+					struct gpio_callback *cb, bool set)
 {
 	struct rk_gpio_data *data = dev->data;
+
+	LOG_DBG("manage_callback set=%d", set);
 	return gpio_manage_callback(&data->callbacks, cb, set);
 }
 
 static uint32_t rk_gpio_get_pending_int(const struct device *dev)
 {
+	LOG_DBG("get_pending_int");
 	ARG_UNUSED(dev);
 	return 0;
 }
@@ -240,13 +267,38 @@ static int rk_gpio_init(const struct device *dev)
     const struct rk_gpio_cfg *cfg = dev->config;
     struct rk_gpio_data *data = dev->data;
 
-    /* Abilita clock e disasserisce reset se presenti in DT */
+    LOG_DBG("%s: init entry", cfg->label);
+
+    /* Abilita clock e reset */
+#if IS_ENABLED(CONFIG_CLOCK_CONTROL)
     if (cfg->clk_dev != NULL && device_is_ready(cfg->clk_dev)) {
         (void)clock_control_on(cfg->clk_dev, (clock_control_subsys_t)&cfg->pclk);
         (void)clock_control_on(cfg->clk_dev, (clock_control_subsys_t)&cfg->dbclk);
         LOG_DBG("%s: clocks enabled (pclk=%u dbclk=%u)", cfg->label, cfg->pclk.id, cfg->dbclk.id);
     }
-    /* Resets: omesse per ora (CRU reset driver non implementato) */
+#endif
+
+#if IS_ENABLED(CONFIG_RESET)
+    if (cfg->reset_cnt > 0U && cfg->resets != NULL) {
+        for (uint8_t i = 0U; i < cfg->reset_cnt; i++) {
+            const struct reset_dt_spec *spec = &cfg->resets[i];
+
+            if (!device_is_ready(spec->dev)) {
+                LOG_WRN("%s: reset controller not ready (idx=%u)", cfg->label, i);
+                continue;
+            }
+
+            int ret = reset_line_deassert_dt(spec);
+
+            if (ret < 0 && ret != -ENOSYS) {
+                LOG_ERR("%s: reset deassert failed (idx=%u id=%u err=%d)",
+                        cfg->label, i, spec->id, ret);
+                return ret;
+            }
+        }
+        LOG_DBG("%s: resets deasserted (count=%u)", cfg->label, cfg->reset_cnt);
+    }
+#endif
 
     /* Mappa l'area MMIO come Device (no cache) su ARMv8-A */
     uint8_t *va = NULL;
@@ -259,6 +311,9 @@ static int rk_gpio_init(const struct device *dev)
 	data->mmio_base = (mm_reg_t)(uintptr_t)va;
 
 	/* Inizializza lo shadow DR con il valore hardware corrente (se leggibile) */
+	/* Assicura che il controllo sia affidato al software (SWPORTA_CTL=0) */
+	reg_write(dev, RK_GPIO_SWPORTA_CTL, 0);
+
 	data->dr_shadow = reg_read(dev, RK_GPIO_SWPORTA_DR);
 	data->ddr_shadow = reg_read(dev, RK_GPIO_SWPORTA_DDR);
 
@@ -270,27 +325,64 @@ static int rk_gpio_init(const struct device *dev)
 }
 
 /* --- Instanze dai DT --- */
+#define RK_GPIO_RESET_MAX 2
+#define RK_GPIO_RESET_SPEC(inst, idx) RESET_DT_SPEC_INST_GET_BY_IDX(inst, idx)
+
+#if IS_ENABLED(CONFIG_RESET)
+#define RK_GPIO_RESETS_DECLARE(inst) \
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, resets),				\
+		(static const struct reset_dt_spec rk_gpio_resets_##inst[] = {	\
+			LISTIFY(DT_PROP_LEN(DT_DRV_INST(inst), resets),		\
+				RK_GPIO_RESET_SPEC, (,), inst)			\
+		};),								\
+		())
+#define RK_GPIO_RESETS_PTR(inst) \
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, resets), (rk_gpio_resets_##inst), (NULL))
+#define RK_GPIO_RESETS_CNT(inst) \
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, resets),				\
+		(DT_PROP_LEN(DT_DRV_INST(inst), resets)), (0))
+#else
+#define RK_GPIO_RESETS_DECLARE(inst)
+#define RK_GPIO_RESETS_PTR(inst) NULL
+#define RK_GPIO_RESETS_CNT(inst) 0
+#endif
+
 #define RK_GPIO_DEFINE(inst)                                                        \
-    static struct rk_gpio_data rk_gpio_data_##inst;                             \
-    static const struct rk_gpio_cfg rk_gpio_cfg_##inst = {                      \
-        .common = {                                                             \
-            .port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(inst),           \
-        },                                                                      \
-        .mmio_phys = DT_INST_REG_ADDR(inst),                                     \
-        .mmio_size = DT_INST_REG_SIZE(inst),                                     \
-        .bank_idx = DT_INST_PROP(inst, rockchip_bank_index),                     \
-        .irq = -1,                                                               \
-        .label = DT_INST_PROP_OR(inst, label, "GPIO_RK3588"),                  \
-        .clk_dev = COND_CODE_1(DT_CLOCKS_HAS_IDX(DT_DRV_INST(inst), 0),         \
-                    (DEVICE_DT_GET(DT_INST_CLOCKS_CTLR_BY_IDX(inst, 0))),       \
-                    (NULL)),                                                     \
-        .pclk = { .id = COND_CODE_1(DT_CLOCKS_HAS_IDX(DT_DRV_INST(inst), 0),    \
-                    (DT_INST_CLOCKS_CELL_BY_IDX(inst, 0, id)), (0)) },          \
-        .dbclk = { .id = COND_CODE_1(DT_CLOCKS_HAS_IDX(DT_DRV_INST(inst), 1),   \
-                    (DT_INST_CLOCKS_CELL_BY_IDX(inst, 1, id)), (0)) },          \
-    };                                                                           \
-    DEVICE_DT_INST_DEFINE(inst, &rk_gpio_init, NULL,                             \
-                  &rk_gpio_data_##inst, &rk_gpio_cfg_##inst,             \
-                  POST_KERNEL, CONFIG_GPIO_INIT_PRIORITY, &rk_gpio_api);
+	BUILD_ASSERT(DT_INST_PROP_OR(inst, rockchip_bank_index, 0) < 8, "invalid bank index"); \
+	IF_ENABLED(CONFIG_RESET, (                                                 \
+		BUILD_ASSERT(                                                           \
+			COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, resets),                    \
+				(DT_PROP_LEN(DT_DRV_INST(inst), resets) <= RK_GPIO_RESET_MAX), \
+				(1)),                                                           \
+			"Too many resets for RK GPIO");                                     \
+		))                                                                      \
+	RK_GPIO_RESETS_DECLARE(inst)                                               \
+	static struct rk_gpio_data rk_gpio_data_##inst;                             \
+	static const struct rk_gpio_cfg rk_gpio_cfg_##inst = {                      \
+		.common = {                                                             \
+			.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(inst),           \
+		},                                                                      \
+		.mmio_phys = DT_INST_REG_ADDR(inst),                                     \
+		.mmio_size = DT_INST_REG_SIZE(inst),                                     \
+		.bank_idx = DT_INST_PROP(inst, rockchip_bank_index),                     \
+		.irq = -1,                                                               \
+		.label = DT_INST_PROP_OR(inst, label, "GPIO_RK3588"),                  \
+		IF_ENABLED(CONFIG_CLOCK_CONTROL, (                                      \
+			.clk_dev = COND_CODE_1(DT_CLOCKS_HAS_IDX(DT_DRV_INST(inst), 0),         \
+					    (DEVICE_DT_GET(DT_INST_CLOCKS_CTLR_BY_IDX(inst, 0))), \
+					    (NULL)),                                                     \
+			.pclk = { .id = COND_CODE_1(DT_CLOCKS_HAS_IDX(DT_DRV_INST(inst), 0),    \
+					    (DT_INST_CLOCKS_CELL_BY_IDX(inst, 0, id)), (0)) },          \
+			.dbclk = { .id = COND_CODE_1(DT_CLOCKS_HAS_IDX(DT_DRV_INST(inst), 1),   \
+					    (DT_INST_CLOCKS_CELL_BY_IDX(inst, 1, id)), (0)) },          \
+		))                                                                      \
+		IF_ENABLED(CONFIG_RESET, (                                              \
+			.resets = RK_GPIO_RESETS_PTR(inst),                                   \
+			.reset_cnt = RK_GPIO_RESETS_CNT(inst),                                 \
+		))                                                                      \
+	};                                                                           \
+	DEVICE_DT_INST_DEFINE(inst, &rk_gpio_init, NULL,                             \
+			      &rk_gpio_data_##inst, &rk_gpio_cfg_##inst,             \
+			      POST_KERNEL, CONFIG_GPIO_INIT_PRIORITY, &rk_gpio_api);
 
 DT_INST_FOREACH_STATUS_OKAY(RK_GPIO_DEFINE)
