@@ -110,3 +110,8 @@ SysbuildKconfigBasic.txt
 SysbuildKconfigBasicNoModules.txt
 TextEncoding.txt
 YAMLLint.txt
+TRM/minicom-pinctrl.cap
+TRM/Rockchip RK3588 TRM V1.0-Part1-20220309.pdf
+TRM/Rockchip RK3588 TRM V1.0-Part2 20220309.pdf
+TRM/Rockchip_RK3588_Datasheet_V1.3-20220328.pdf
+TRM/Rockchip_RK3588S_Datasheet_V1.3-20220310.pdf
