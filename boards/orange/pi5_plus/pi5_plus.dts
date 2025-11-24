@@ -23,15 +23,17 @@
         led0 = &user_led0;
     };
 
-    leds {
-        compatible = "gpio-leds";
+	leds {
+		compatible = "gpio-leds";
 
-        /* User LED on 40-pin header pin 11 (GPIO1_A4) */
-        user_led0: led_0 {
-            gpios = <&gpio1 4 GPIO_ACTIVE_HIGH>;
-            label = "USER_LED0";
-        };
-    };
+		/* User LED on 40-pin header pin 11 (GPIO1_A4) */
+		user_led0: led_0 {
+			gpios = <&gpio1 4 GPIO_ACTIVE_HIGH>;
+			pinctrl-names = "default";
+			pinctrl-0 = <&gpio1a4_as_gpio>;
+			label = "USER_LED0";
+		};
+	};
 
 };
 

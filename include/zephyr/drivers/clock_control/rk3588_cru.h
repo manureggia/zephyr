@@ -10,13 +10,13 @@
 
 #include <zephyr/devicetree.h>
 #include <zephyr/dt-bindings/clock/rk3588-cru.h>
+#include <zephyr/sys/sys_io.h>
 
-/* Base CRU dal device tree */
-#define CRU_BASE_ADDR		DT_REG_ADDR(DT_NODELABEL(cru))//0xFD7C0000U
+extern mm_reg_t rk3588_cru_base;
 
 #define CRU_REG_WRITE(offset, we_mask, data) \
-	(*(volatile uint32_t *)(CRU_BASE_ADDR + (offset)) = \
-	(((uint32_t)(we_mask) << 16) | (uint32_t)(data)))
+	sys_write32((((uint32_t)(we_mask) << 16) | (uint32_t)(data)), \
+		    rk3588_cru_base + (offset))
 
 #define CRU_GLB_SRST_FST_VALUE	0x0C08U
 #define CRU_GLB_SRST_SND_VALUE	0x0C0CU
@@ -37,6 +37,7 @@
 #define CRU_SOFTRST_CON05	0x0A14U
 
 void rk3588_cru_init(void);
+void rk3588_cru_dump_state(void);
 
 
 

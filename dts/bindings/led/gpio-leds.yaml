@@ -36,6 +36,15 @@ compatible: "gpio-leds"
 
 child-binding:
   description: GPIO LED child node
+  include:
+    - name: pinctrl-device.yaml
+      property-allowlist:
+        - pinctrl-0
+        - pinctrl-1
+        - pinctrl-2
+        - pinctrl-3
+        - pinctrl-4
+        - pinctrl-names
   properties:
     gpios:
       type: phandle-array

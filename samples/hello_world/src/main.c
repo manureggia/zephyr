@@ -10,6 +10,7 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/drivers/clock_control/rk3588_cru.h>
 
 LOG_MODULE_REGISTER(app, LOG_LEVEL_INF);
 
@@ -33,6 +34,8 @@ int main(void)
 
 	LOG_INF("Blink su LED0 (header pin 11) ogni %u ms",
 		BLINK_PERIOD_MS);
+
+	rk3588_cru_dump_state();
 
 	while (true) {
 		gpio_pin_set_dt(&user_led, 1);

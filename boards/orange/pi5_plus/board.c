@@ -13,7 +13,6 @@ LOG_MODULE_REGISTER(board_rk3588, CONFIG_LOG_DEFAULT_LEVEL);
 
 /* GPIO header pins we want available as plain GPIOs at boot */
 static const pinctrl_soc_pin_t header_pins[] = {
-	DT_PROP_BY_IDX(DT_NODELABEL(gpio1a4_as_gpio), pinmux, 0),
 	DT_PROP_BY_IDX(DT_NODELABEL(gpio3a1_as_gpio), pinmux, 0),
 	DT_PROP_BY_IDX(DT_NODELABEL(gpio1d6_as_gpio), pinmux, 0),
 };
@@ -34,9 +33,5 @@ static int pi5_plus_header_pins_init(void)
 	return 0;
 }
 
-/*
- * Require POST_KERNEL so that the pinctrl driver, clocks and resets have
- * finished initializing; invoking the routine in PRE_KERNEL_1 was racing with
- * those subsystems and caused the boot hang.
- */
+
 SYS_INIT(pi5_plus_header_pins_init, POST_KERNEL, 50);
